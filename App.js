@@ -6,6 +6,8 @@ import { styles } from './styles'
 const App = () => {
     const [data, setData] = useState(null)
     const [load, setLoad] = useState(false)
+    const [currentHourlyForecast, setCurrentHourlyForecast] = useState([]);
+
 
     useEffect(() => {
         fetch('http://api.weatherapi.com/v1/forecast.json?key=5a492ff34efa492b91a172441211110&q=huejutla&days=3&aqi=no&alerts=no&lang=es')
@@ -16,6 +18,15 @@ const App = () => {
             })
             .catch(err => Alert.alert('Error inesperado : ' + err))
     }, [])
+    useEffect(() => {
+        if (data) {
+            const currentHour = new Date().getHours();
+            const next24Hours = data.forecast.forecastday[0].hour.slice(currentHour, currentHour + 24);
+            setCurrentHourlyForecast(next24Hours);
+        }
+    }, [data]);
+
+    console.log(currentHourlyForecast)
 
     const UScreen = () => {
         return (
@@ -27,6 +38,7 @@ const App = () => {
     }
 
     const LScreen = () => {
+
         return (
             <View style={styles.head}>
                 <View>
@@ -45,6 +57,21 @@ const App = () => {
                         {data.forecast.forecastday[0].day.mintemp_c}°
                     </Text>
                 </View>
+                <View style={styles.containerLastHpurs}>
+                    <FlatList
+                        horizontal
+                        data={currentHourlyForecast}
+                        keyExtractor={(item, index) => index.toString()}
+                        renderItem={({ item }) => (
+                            <View style={styles.hourlyContainer}>
+                                <Text>{item.time.split(' ')[1]}</Text>
+                                <Image style={styles.hourIcon} source={{ uri: 'https:' + item.condition.icon }} />
+                                <Text>{item.temp_c}°C</Text>
+                            </View>
+                        )}
+                    />
+                </View>
+
                 <View style={styles.lastThreeDays}>
                     <FlatList
                         data={data.forecast.forecastday}
@@ -56,6 +83,22 @@ const App = () => {
                             iko={item.day.condition.icon} />}
 
                     />
+                </View>
+                <View style={styles.containerButtom}>
+                    <View>
+                        <Text>Temperatura {data.current.temp_c}°C</Text>
+                    </View>
+                    <View>
+                        <Text>Humedad {data.current.humidity}%</Text>
+                    </View>
+                </View>
+                <View style={styles.containerButtom}>
+                    <View>
+                        <Text>Viento {data.current.wind_kph} km/h</Text>
+                    </View>
+                    <View>
+                        <Text>Presión de aire {data.current.pressure_mb}</Text>
+                    </View>
                 </View>
             </View>
         )
@@ -70,7 +113,7 @@ const App = () => {
                 <Text style={styles.textWhite}>{max}°C</Text>
                 <Image style={{ height: 30, width: 30 }} source={{ uri: 'https:' + iko }} />
                 <Text style={styles.textWhite}>{min}°C</Text>
-                
+
             </View>
         )
     }
